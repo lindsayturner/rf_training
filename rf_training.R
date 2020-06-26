@@ -93,17 +93,21 @@ names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi')
 dfAll<-read.csv( file = "C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv")
 #dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data.csv",header=TRUE)
 
-indices <- matrix(data = NA, nrow = 55000, ncol = 36)
+indices <- matrix(data = NA, nrow = 55000, ncol = 28)
 
 count <- 1
+col_names <- character(28)
 for (i in 1:8) {
   for (j in i:8) {
-    indices[, count] = nre_fun(training_bc[i], training_bc[j])
-    count = count + 1
+    if(i != j) {
+      indices[, count] = nre_fun(training_bc[,i], training_bc[,j]) * 10000
+      col_names[count] <- paste(toString(i), ",", toString(j))
+      count = count + 1
+    }
   }
 }
-  
 
+colnames(indices) <- col_names
 
 ##Create indices
 cl <- makeCluster(detectCores())
