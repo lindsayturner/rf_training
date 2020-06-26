@@ -1,4 +1,5 @@
 #load packages
+library(readr)
 library(raster)
 library(doParallel)
 library(caTools)
@@ -9,12 +10,13 @@ library(ranger)
 
 ##Corrected raster file of the full image stip from the satellite (~1600 km2, ~40GB)
 library(raster)
-file<-"Q:/Satellite imagery test/workflow/sharpened/16SEP22191915_radiance_NNsharp_uinteger.dat"
+#file<-"Q:/Satellite imagery test/workflow/sharpened/16SEP22191915_radiance_NNsharp_uinteger.dat"
 #file<-"D:/Chiwawa test/ENVI Radiance Corrected/test classification/all_bands_subset.dat"
 
 ##read whole file into memory 
 #################Big memory hog, but makes math much faster for index
 chi<-readAll(brick(file))
+
 
 #if it won't fit in memory just read in with brick
 chi<-brick(file)
@@ -24,6 +26,13 @@ inMemory(chi)
 # Rename layers in chi8 raster brick
 names(chi) <- c('coastal', 'blue', 'green', 'yellow', 'red',
                 'rededge', 'NIR1', 'NIR2' )
+
+###normalized ratio equation for generating indices
+nre_fun <- function(x, y) {
+  nre <- (y - x) / (y + x)
+  return(nre)
+}
+
 
 ###generate some indices:
 #ndvi=nir2-red/nir2+red
@@ -74,16 +83,27 @@ ndsi_fun<- function(x, y) {
 
 chi_index<-stack(ndvi,ndwi,ccci,bai,rei,wvbi,ndsi)
 
-names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi' )
+names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi')
 
 
 
 
 
 # Read in training data ----
+dfAll<-read.csv( file = "C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv")
+#dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data.csv",header=TRUE)
 
+indices <- matrix(data = NA, nrow = 55000, ncol = 36)
 
-dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data.csv",header=TRUE)
+count <- 1
+for (i in 1:8) {
+  for (j in i:8) {
+    indices[, count] = nre_fun(training_bc[i], training_bc[j])
+    count = count + 1
+  }
+}
+  
+
 
 ##Create indices
 cl <- makeCluster(detectCores())
@@ -130,7 +150,7 @@ undersample_ds <- function(x, classCol, nsamples_class) {
   return(x)
 }
 table(dfAll$Classname)
-nsamples_class <- 1000000
+nsamples_class <- 5000
 
 training_bc <- undersample_ds(dfAll, "Classname", nsamples_class)
 training_bc$Classname <- as.factor(training_bc$Classname)
