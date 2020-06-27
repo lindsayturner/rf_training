@@ -90,55 +90,10 @@ names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi')
 
 
 # Read in training data ----
-dfAll<-read.csv( file = "C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv")
+dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data_1M_sub.csv",header=T)
 #dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data.csv",header=TRUE)
 
-indices <- matrix(data = NA, nrow = 55000, ncol = 28)
-
-count <- 1
-col_names <- character(28)
-for (i in 1:8) {
-  for (j in i:8) {
-    if(i != j) {
-      indices[, count] = nre_fun(training_bc[,i], training_bc[,j]) * 10000
-      col_names[count] <- paste(toString(i), ",", toString(j))
-      count = count + 1
-    }
-  }
-}
-
-colnames(indices) <- col_names
-
-##Create indices
-cl <- makeCluster(detectCores())
-registerDoParallel(cl)
-getDoParWorkers()
-ndvi <- overlay(x=chi[[5]], y=chi[[8]], fun=ndvi_fun)
-ndwi <- overlay(x=chi[[1]], y=chi[[8]], fun=ndwi_fun)
-ccci <- overlay(x=chi[[6]], y=chi[[8]], z=chi[[5]], fun=ccci_fun)
-bai <- overlay(x=chi[[2]], y=chi[[7]], fun=bai_fun)
-rei <- overlay(x=chi[[2]], y=chi[[8]], fun=rei_fun)
-wvbi <- overlay(x=chi[[6]], y=chi[[1]], fun=wvbi_fun)
-ndsi <- overlay(x=chi[[4]], y=chi[[3]], fun=ndsi_fun)
-
-stopCluster(cl)
-
-#####Need to add "classname" back in as well, I haven't done that here yet.
-
-chi_index<-stack(ndvi,ndwi,ccci,bai,rei,wvbi,ndsi)
-
-names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi' )
-
-
-
-########################################################################
-# Begin classification algorithms ----
-######################################################################
-
-
-## Fit Random Forest Model
 ### function to Select minimum number of samples from each category
-dfAll <- na.omit(dfAll)
 library(randomForest)
 library(caret)
 library(e1071)
@@ -153,99 +108,68 @@ undersample_ds <- function(x, classCol, nsamples_class) {
   }
   return(x)
 }
-table(dfAll$Classname)
-nsamples_class <- 5000
+nsamples_class <- 100000
 
 training_bc <- undersample_ds(dfAll, "Classname", nsamples_class)
 training_bc$Classname <- as.factor(training_bc$Classname)
-#write.csv(training_bc, file = "Q:/Satellite imagery test/training_data_1M_sub.csv",row.names=FALSE)
-# set.seed(13)
-# inTrain <- createDataPartition(y = training_bc$Classname,
-#                                ## the outcome data are needed
-#                                p = 0.90,
-#                                ## The percentage of data in the
-#                                ## training set
-#                                list = FALSE)
-# training <- training_bc[ inTrain, ]
-# testing <- training_bc[-inTrain, ]
-# 
-# rf_fit <- ranger(Classname ~ coastal + blue + green + yellow + red + rededge + NIR1 + NIR2 +ccci + ndvi + ndwi + wv_water, data = training,
-#                        mtry = 5, num.trees = 1500, verbose=TRUE, num.threads=12, importance="permutation", splitrule ="gini")
-######Using randomforest package for easier prediction
-library(foreach)
-library(doParallel)
-library(randomForest)
-cl <- makeCluster(detectCores())
-registerDoParallel(cl)
-getDoParWorkers()
-set.seed(15)
-inTrain <- createDataPartition(y = training_bc$Classname,
+
+
+
+
+
+indices <- matrix(data = NA, nrow = 1100000, ncol = 28)
+
+count <- 1
+col_names <- character(28)
+for (i in 1:8) {
+  for (j in i:8) {
+    if(i != j) {
+      indices[, count] = nre_fun(training_bc[,i], training_bc[,j]) * 10000
+      #col_names[count] <- paste(toString(i),"_",toString(j))
+      col_names[count] <- paste("x",i,j,sep=".")
+      count = count + 1
+    }
+  }
+}
+
+colnames(indices) <- col_names
+indices_df<-as.data.frame(indices)
+indices_df$Classname<-training_bc$Classname
+head(indices_df)
+
+
+###train model
+library(caret)
+library(ranger)
+set.seed(8)
+inTrain <- createDataPartition(y = indices_df$Classname,
                                ## the outcome data are needed
-                               p = .9,
+                               p = .90,
                                ## The percentage of data in the
                                ## training set
                                list = FALSE)
-training <- training_bc[ inTrain,]
-testing <- training_bc[-inTrain,]
+training <- indices_df[ inTrain,]
+testing <- indices_df[-inTrain,]
 
-
-rf_fit<- randomForest(Classname ~ ndvi+ndwi+ccci+bai+rei+wvbi+ndsi, mtry = 4, ntree = 300, data = training)
-stopCluster(cl)
+rf_fit<- ranger(Classname ~ ., mtry = 5,  num.trees = 200, importance="permutation", data = training)
 
 # display results
 print(rf_fit)
-# plot(fit, scales = list(x = list(log = 10)))
+
 # load("side_presence_contemp.RData")
 rpartPred2 <- predict(rf_fit, testing)
-confusionMatrix(rpartPred2, testing$Classname)
-varImp(rf_fit)
-importance(rf_fit)
-LVQimportance <- varImp(rf_fit, scale = FALSE)
-plot(LVQimportance, cex = 1.5)
+confusionMatrix(rpartPred2$predictions, testing$Classname)
 
-# bankfull  widths from current parameters
-save(rf_fit, file = "D:/Chiwawa test/rf_fit.RData")
+v<-as.vector(rf_fit$variable.importance)
+w<-(as.vector((row.names(as.data.frame(rf_fit$variable.importance)))))
+DF<-cbind(w,v)
+DF<-as.data.frame(DF)
+DF$v<-as.numeric(as.character(DF$v))
+DF
 
-load("D:/Chiwawa test/rf_fit.RData")
-
-##Predict whole raster
-
-###
-library(randomForest)
-preds_rf <- raster::predict(chi_index, model=rf_fit, na.rm=TRUE, type="response", progress='window')
-
-#faster implementation
-beginCluster(type="SOCK")
-preds_rf <- clusterR(chi_index, predict, args = list(rf_fit),progress='window', type="response")
-endCluster()
-
-writeRaster(preds_rf, "D:/Chiwawa test/ENVI Radiance Corrected/test classification/chiwawa_RF_classification", format = "GTiff")
-
-
-
-# Import Clip file to redice file size for prediction
-clip_extent <- shapefile("chiwawa_clip_extent.shp")
-
-chi_small <- crop(chi8, extent(clip_extent))
-
-writeRaster(chi_small, "Chiwawa_index_small", format = "GTiff")
-
-
-
-# Load file
-chi_small <- brick('Chiwawa_index_small.tif')
-names(chi_small) <- c("coastal", "blue", "green", "yellow", "red", "rededge", "NIR1", "NIR2", "ndvi57", "ndvi58", "ndvi47", "ndvi48", "ndvi37", "ndvi17", "ndvi68")
-
-library(randomForest)
-
-chi_small
-beginCluster(8)
-preds_rf <- clusterR(chi8, raster::predict, args = list(model = rf_fit))
-endCluster()
-
-# plot(preds_rf)
-
-writeRaster(preds_rf, "Chiwawa prediction_rf_4", format = "GTiff")
-# preds_rf
-
-## Convert raster to Polygon
+ggplot(DF, aes(x=reorder(w,v), y=v,fill=v))+ 
+  geom_bar(stat="identity", position="dodge")+ coord_flip()+
+  ylab("Variable Importance")+
+  xlab("")+
+  ggtitle("Information Value Summary")+
+  scale_fill_gradient(low="red", high="blue")
