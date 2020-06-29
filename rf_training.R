@@ -107,7 +107,7 @@ undersample_ds <- function(x, classCol, nsamples_class) {
   }
   return(x)
 }
-nsamples_class <- 5000
+nsamples_class <- 10000
 
 training_bc <- undersample_ds(dfAll, "Classname", nsamples_class)
 training_bc$Classname <- as.factor(training_bc$Classname)
@@ -118,7 +118,7 @@ training_bc$Classname <- as.factor(training_bc$Classname)
 
 # Generate all indices using training data
 
-indices <- matrix(data = NA, nrow = 55000, ncol = 64)
+indices <- matrix(data = NA, nrow = 110000, ncol = 64)
 
 count <- 1
 col_names <- character(64)
@@ -191,7 +191,11 @@ ggplot(DF, aes(x=reorder(w,v), y=v,fill=v))+
   ggtitle("Information Value Summary")+
   scale_fill_gradient(low="red", high="blue")
 
-# output data
+# data table with colors and variable importance
 library(stringr)
 sep_col <- str_split_fixed(string = DF$w, pattern = "[.]", n = 2)
 DF_sep <- cbind(sep_col, v)
+DF_sep <- as.data.frame(DF_sep)
+DF_sep <- dplyr::arrange(DF_sep, desc(DF_sep$v))
+colnames(DF_sep) <- c("color1", "color2", "v")
+write.csv(DF_sep, file = "indices_table_10K_sub.csv")
