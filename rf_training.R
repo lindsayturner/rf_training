@@ -131,8 +131,6 @@ for (i in 1:8) {
   }
 }
 
-colnames(indices) <- col_names
-
 # Generate all indices without duplicates (1x8 and 8x1, or 1x1, 2x2, etc)
 indices <- matrix(data = NA, nrow = 55000, ncol = 28)
 
@@ -148,6 +146,8 @@ for (i in 1:8) {
     }
   }
 }
+
+#name columns and create indices_df
 
 colnames(indices) <- col_names
 indices_df<-as.data.frame(indices)
@@ -190,3 +190,8 @@ ggplot(DF, aes(x=reorder(w,v), y=v,fill=v))+
   xlab("")+
   ggtitle("Information Value Summary")+
   scale_fill_gradient(low="red", high="blue")
+
+# output data
+library(stringr)
+sep_col <- str_split_fixed(string = DF$w, pattern = "[.]", n = 2)
+DF_sep <- cbind(sep_col, v)
