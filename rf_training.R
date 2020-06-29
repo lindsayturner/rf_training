@@ -1,5 +1,4 @@
 #load packages
-library(readr)
 library(raster)
 library(doParallel)
 library(caTools)
@@ -90,7 +89,7 @@ names(chi_index) <- c('ndvi','ndwi','ccci','bai','rei','wvbi','ndsi')
 
 
 # Read in training data ----
-dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data_1M_sub.csv",header=T)
+dfAll<-read.csv( file = "C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv",header=T)
 #dfAll<-read.csv( file = "Q:/Satellite imagery test/training_data.csv",header=TRUE)
 
 ### function to Select minimum number of samples from each category
@@ -108,7 +107,7 @@ undersample_ds <- function(x, classCol, nsamples_class) {
   }
   return(x)
 }
-nsamples_class <- 100000
+nsamples_class <- 5000
 
 training_bc <- undersample_ds(dfAll, "Classname", nsamples_class)
 training_bc$Classname <- as.factor(training_bc$Classname)
@@ -117,17 +116,35 @@ training_bc$Classname <- as.factor(training_bc$Classname)
 
 
 
-indices <- matrix(data = NA, nrow = 1100000, ncol = 28)
+# Generate all indices using training data
+
+indices <- matrix(data = NA, nrow = 55000, ncol = 64)
+
+count <- 1
+col_names <- character(64)
+for (i in 1:8) {
+  for (j in 1:8) {
+    indices[, count] <- nre_fun(training_bc[,i], training_bc[,j]) * 10000
+    #col_names[count] <- paste(names(training_bc)[i], names(training_bc)[j], sep = ",")
+    col_names[count] <- paste("x",i,j,sep=".")
+    count <- count + 1
+  }
+}
+
+colnames(indices) <- col_names
+
+# Generate all indices without duplicates (1x8 and 8x1, or 1x1, 2x2, etc)
+indices <- matrix(data = NA, nrow = 55000, ncol = 28)
 
 count <- 1
 col_names <- character(28)
 for (i in 1:8) {
   for (j in i:8) {
     if(i != j) {
-      indices[, count] = nre_fun(training_bc[,i], training_bc[,j]) * 10000
-      #col_names[count] <- paste(toString(i),"_",toString(j))
-      col_names[count] <- paste("x",i,j,sep=".")
-      count = count + 1
+      indices[, count] <- nre_fun(training_bc[,i], training_bc[,j]) * 10000
+      col_names[count] <- paste(names(training_bc)[i], names(training_bc)[j], sep = ".")
+      #col_names[count] <- paste("x",i,j,sep=".")
+      count <- count + 1
     }
   }
 }
