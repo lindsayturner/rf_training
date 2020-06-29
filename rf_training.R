@@ -125,8 +125,8 @@ col_names <- character(64)
 for (i in 1:8) {
   for (j in 1:8) {
     indices[, count] <- nre_fun(training_bc[,i], training_bc[,j]) * 10000
-    #col_names[count] <- paste(names(training_bc)[i], names(training_bc)[j], sep = ",")
-    col_names[count] <- paste("x",i,j,sep=".")
+    col_names[count] <- paste(names(training_bc)[i], names(training_bc)[j], sep = ".")
+    #col_names[count] <- paste("x",i,j,sep=".")
     count <- count + 1
   }
 }
