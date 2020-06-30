@@ -204,7 +204,7 @@ rpartPred2 <- predict(rf_fit, testing)
 confusionMatrix(rpartPred2$predictions, testing$Classname)
 confusion_categories <- confusionMatrix(rpartPred2$predictions, testing$Classname)[["byClass"]]
 confusion_DF <- as.data.frame(confusion_categories)
-balanced_accuracy <- confusion_categories[11]
+balanced_accuracy <- confusion_categories[,11]
 
 v<-as.vector(rf_fit$variable.importance)
 w<-(as.vector((row.names(as.data.frame(rf_fit$variable.importance)))))
@@ -227,5 +227,6 @@ DF_sep <- cbind(sep_col, v)
 DF_sep <- as.data.frame(DF_sep)
 DF_sep <- dplyr::arrange(DF_sep, desc(DF_sep$v))
 colnames(DF_sep) <- c("color1", "color2", "v")
-write.csv(DF_sep, file = "indices_table_10K_sub.csv")
+write.csv(DF_sep, file = "indices_table_10K_sub_5_indices.csv")
 write.csv(balanced_accuracy, file = "class_accuracy_5_indices.csv")
+write.csv(rf_fit$prediction.error, file = "rf_fit_5_indices.csv")
