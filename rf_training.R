@@ -113,8 +113,34 @@ training_bc <- undersample_ds(dfAll, "Classname", nsamples_class)
 training_bc$Classname <- as.factor(training_bc$Classname)
 
 
+# Use top 5/10/15 indices from tests
 
+indices <- matrix(data = NA, nrow = 110000, ncol = 5)
 
+green.red <- nre_fun(training_bc[3], training_bc[5])
+blue.coastal <- nre_fun(training_bc[2], training_bc[1])
+NIR2.yellow <- nre_fun(training_bc[8],training_bc[4])
+NIR1.red <- nre_fun(training_bc[7],training_bc[5])
+rededge.yellow <- nre_fun(training_bc[6],training_bc[4])
+
+red.NIR2 <- nre_fun(training_bc[5],training_bc[8])
+rededge.NIR2 <- nre_fun(training_bc[6],training_bc[8])
+rededge.NIR1 <- nre_fun(training_bc[6],training_bc[7])
+green.NIR1 <- nre_fun(training_bc[3],training_bc[7])
+green.NIR2 <- nre_fun(training_bc[3],training_bc[8])
+
+rededge.green <- nre_fun(training_bc[6],training_bc[3])
+rededge.red <- nre_fun(training_bc[6],training_bc[5])
+yellow.NIR1 <- nre_fun(training_bc[4],training_bc[7])
+NIR2.blue <- nre_fun(training_bc[8],training_bc[2])
+blue.red <- nre_fun(training_bc[2],training_bc[5])
+
+indices <- cbind(green.red, blue.coastal, NIR2.yellow, NIR1.red, rededge.yellow)
+names(indices) <- c('green.red', 'blue.coastal', 'NIR2.yellow', 'NIR1.red', 'rededge.yellow')
+indices_df<-as.data.frame(indices)
+indices_df <- indices_df * 10000
+indices_df$Classname<-training_bc$Classname
+head(indices_df)
 
 # Generate all indices using training data
 
@@ -176,6 +202,9 @@ print(rf_fit)
 # load("side_presence_contemp.RData")
 rpartPred2 <- predict(rf_fit, testing)
 confusionMatrix(rpartPred2$predictions, testing$Classname)
+confusion_categories <- confusionMatrix(rpartPred2$predictions, testing$Classname)[["byClass"]]
+confusion_DF <- as.data.frame(confusion_categories)
+balanced_accuracy <- confusion_categories[11]
 
 v<-as.vector(rf_fit$variable.importance)
 w<-(as.vector((row.names(as.data.frame(rf_fit$variable.importance)))))
@@ -199,3 +228,4 @@ DF_sep <- as.data.frame(DF_sep)
 DF_sep <- dplyr::arrange(DF_sep, desc(DF_sep$v))
 colnames(DF_sep) <- c("color1", "color2", "v")
 write.csv(DF_sep, file = "indices_table_10K_sub.csv")
+write.csv(balanced_accuracy, file = "class_accuracy_5_indices.csv")
