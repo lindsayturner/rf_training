@@ -135,8 +135,30 @@ yellow.NIR1 <- nre_fun(training_bc[4],training_bc[7])
 NIR2.blue <- nre_fun(training_bc[8],training_bc[2])
 blue.red <- nre_fun(training_bc[2],training_bc[5])
 
+# 5
 indices <- cbind(green.red, blue.coastal, NIR2.yellow, NIR1.red, rededge.yellow)
 names(indices) <- c('green.red', 'blue.coastal', 'NIR2.yellow', 'NIR1.red', 'rededge.yellow')
+
+# 10
+indices <- cbind(green.red, blue.coastal, NIR2.yellow, NIR1.red, rededge.yellow,
+                 red.NIR2, rededge.NIR2, rededge.NIR1, green.NIR1, green.NIR2)
+
+names(indices) <- c('green.red', 'blue.coastal', 'NIR2.yellow', 'NIR1.red',
+                    'rededge.yellow', 'red.NIR2', 'rededge.NIR2', 
+                    'rededge.NIR1', 'green.NIR1', 'green.NIR2')
+
+# 15
+indices <- cbind(green.red, blue.coastal, NIR2.yellow, NIR1.red, rededge.yellow,
+                 red.NIR2, rededge.NIR2, rededge.NIR1, green.NIR1, green.NIR2,
+                 rededge.green, rededge.red, yellow.NIR1, NIR2.blue, blue.red)
+
+names(indices) <- c('green.red', 'blue.coastal', 'NIR2.yellow', 'NIR1.red',
+                    'rededge.yellow', 'red.NIR2', 'rededge.NIR2', 
+                    'rededge.NIR1', 'green.NIR1', 'green.NIR2',
+                    'rededge.green', 'rededge.red', 'yellow.NIR1',
+                    'NIR2.blue','blue.red')
+
+# convert indices matrix to dataframe
 indices_df<-as.data.frame(indices)
 indices_df <- indices_df * 10000
 indices_df$Classname<-training_bc$Classname
@@ -158,7 +180,7 @@ for (i in 1:8) {
 }
 
 # Generate all indices without duplicates (1x8 and 8x1, or 1x1, 2x2, etc)
-indices <- matrix(data = NA, nrow = 55000, ncol = 28)
+indices <- matrix(data = NA, nrow = 110000, ncol = 28)
 
 count <- 1
 col_names <- character(28)
@@ -172,8 +194,6 @@ for (i in 1:8) {
     }
   }
 }
-
-#name columns and create indices_df
 
 colnames(indices) <- col_names
 indices_df<-as.data.frame(indices)
@@ -227,6 +247,6 @@ DF_sep <- cbind(sep_col, v)
 DF_sep <- as.data.frame(DF_sep)
 DF_sep <- dplyr::arrange(DF_sep, desc(DF_sep$v))
 colnames(DF_sep) <- c("color1", "color2", "v")
-write.csv(DF_sep, file = "indices_table_10K_sub_5_indices.csv")
-write.csv(balanced_accuracy, file = "class_accuracy_5_indices.csv")
-write.csv(rf_fit$prediction.error, file = "rf_fit_5_indices.csv")
+write.csv(DF_sep, file = "indices_table_10K_sub_all_indices.csv")
+write.csv(balanced_accuracy, file = "class_accuracy_all_indices.csv")
+write.csv(rf_fit$prediction.error, file = "rf_fit_all_indices.csv")
