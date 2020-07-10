@@ -40,13 +40,15 @@ def undersample_ds(x, classCol, nsamples_class):
     return x
 
 
+# changes Classnames into integers representing each class
 def string_to_int(y):
     unique_y = np.unique(y)
     y = y.to_numpy()
     for i in range(len(y)):
         for j in range(len(unique_y)):
             if(y[i] == unique_y[j]):
-                y[i] == j
+                y[i] = j
+                
     y = y.astype('int')
     unique_y = unique_y.astype('int')
     return y, unique_y
@@ -59,7 +61,7 @@ def string_to_int(y):
 dfAll = pd.read_csv(r'C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv')
 
 # SEED VARIABLE HERE!
-nsamples_class = 50
+nsamples_class = 500
 training_bc = undersample_ds(dfAll, 'Classname', nsamples_class)
 #training_bc$Classname <- as.factor(training_bc$Classname)
 
@@ -102,10 +104,9 @@ indices_df['Classname'] = pd.Series(training_bc['Classname'],
 # X data for rf
 features = indices_df
 
-# y data for rf
+# y data for rf. The y data needs to be as integers for sklearn. 
 labels, labels_name = string_to_int(indices_df['Classname'])
 
-#need an array of integers representing classnames to run
 
 X_train, X_test, y_train, y_test = train_test_split(features[feature_names],
                                                     labels,
@@ -120,9 +121,8 @@ rf = RandomForestClassifier(n_estimators = 200,
 rf.fit(X_train, y_train)
 
 predictions = rf.predict(X_test)
-errors = abs(predictions - test_labels)
 accuracy = accuracy_score(y_test, predictions)
-confusionmatrix = pd.DataFrame(confusion_matrix(y_test, predicted),
-                               columns=labels_name,
-                               index=labels_name)
+#confusionmatrix = pd.DataFrame(confusion_matrix(y_test, predicted),
+#                               columns=labels_name,
+#                               index=labels_name)
 
