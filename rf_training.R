@@ -214,8 +214,9 @@ inTrain <- createDataPartition(y = indices_df$Classname,
 training <- indices_df[ inTrain,]
 testing <- indices_df[-inTrain,]
 
+start.time <- Sys.time()
 rf_fit<- ranger(Classname ~ ., mtry = 5,  num.trees = 200, importance="permutation", data = training)
-
+end.time <- Sys.time()
 # display results
 print(rf_fit)
 

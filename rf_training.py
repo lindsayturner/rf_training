@@ -14,6 +14,7 @@ Random Forest Model
 import pandas as pd
 import numpy as np
 import random
+import time
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import RandomForestClassifier
@@ -31,41 +32,44 @@ def nre_fun(x, y):
     return nre
 
 
-# SET SEED IN UNDERSAMPLE_DS
-def undersample_ds(x, classCol, nsamples_class):
+# Takes a portion of samples from each class
+# Note: this code is slow and needs revision
+def undersample_ds(x, classCol, nsamples_class, seed):
     for i in np.unique(x[classCol]):
         if (sum(x[classCol] == i) - nsamples_class != 0):            
             xMatch = x[(x[classCol]).str.match(i)]
-            x = x.drop(xMatch.sample(n = len(xMatch) - nsamples_class).index)
+            x = x.drop(xMatch.sample(n = len(xMatch) - nsamples_class,
+                                     random_state = seed).index)
     return x
 
 
 # changes Classnames into integers representing each class
 def string_to_int(y):
     unique_y = np.unique(y)
-    y = y.to_numpy()
-    for i in range(len(y)):
+    new_y = y.copy()
+    new_y = new_y.to_numpy()
+    for i in range(len(new_y)):
         for j in range(len(unique_y)):
-            if(y[i] == unique_y[j]):
-                y[i] = j
+            if(new_y[i] == unique_y[j]):
+                new_y[i] = j
                 
-    y = y.astype('int')
+    new_y = new_y.astype('int')
     unique_y = unique_y.astype('int')
-    return y, unique_y
+    return new_y, unique_y
    
      
 ##############################################################################
 # IMPORT DATA & CREATE DATAFRAME
 ##############################################################################
-    
+
+# Read in the data file    
 dfAll = pd.read_csv(r'C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_sub.csv')
 
-# SEED VARIABLE HERE!
-nsamples_class = 500
-training_bc = undersample_ds(dfAll, 'Classname', nsamples_class)
-#training_bc$Classname <- as.factor(training_bc$Classname)
+nsamples_class = 10000 # Number of samples to take from each class
+sample_seed = 42 # seed for random sample
+training_bc = undersample_ds(dfAll, 'Classname', nsamples_class, sample_seed)
 
-
+# Run NRE function on the combination of  indices that preformed best
 green_red = nre_fun(training_bc['green'], training_bc['red'])
 blue_coastal = nre_fun(training_bc['blue'], training_bc['coastal'])
 NIR2_yellow = nre_fun(training_bc['NIR2'], training_bc['yellow'])
@@ -82,6 +86,7 @@ yellow_NIR1 = nre_fun(training_bc['yellow'], training_bc['NIR1'])
 NIR2_blue = nre_fun(training_bc['NIR2'], training_bc['blue'])
 blue_red = nre_fun(training_bc['blue'], training_bc['red'])
 
+# Combine indices into a dataframe
 indices_df = pd.concat([green_red, blue_coastal, NIR2_yellow, NIR1_red,
                         rededge_yellow, red_NIR2, rededge_NIR2,
                         rededge_NIR1, green_NIR1, green_NIR2, rededge_green,
@@ -114,11 +119,14 @@ X_train, X_test, y_train, y_test = train_test_split(features[feature_names],
                                                     random_state = 42,
                                                     stratify = labels)
 
+t0 = time.time()
 rf = RandomForestClassifier(n_estimators = 200,
                             max_features = 5,
                             random_state = 8)
 
 rf.fit(X_train, y_train)
+t1 = time.time()
+total = t1-t0
 
 predictions = rf.predict(X_test)
 accuracy = accuracy_score(y_test, predictions)
