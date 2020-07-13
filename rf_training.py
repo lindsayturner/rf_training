@@ -67,8 +67,10 @@ dfAll = pd.read_csv(r'C:/Users/linds/NOAA/rf_training/data_raw/training_data_1M_
 
 nsamples_class = 10000 # Number of samples to take from each class
 sample_seed = 42 # seed for random sample
-training_bc = undersample_ds(dfAll, 'Classname', nsamples_class, sample_seed)
-
+#training_bc = undersample_ds(dfAll, 'Classname', nsamples_class, sample_seed)
+training_bc = dfAll.groupby('Classname').apply(lambda s: s.sample(nsamples_class,
+                                                                  random_state = sample_seed))
+df.groupby('category')['item'].apply(lambda s: s.sample(10))
 # Run NRE function on the combination of  indices that preformed best
 green_red = nre_fun(training_bc['green'], training_bc['red'])
 blue_coastal = nre_fun(training_bc['blue'], training_bc['coastal'])
