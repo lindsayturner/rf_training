@@ -45,8 +45,8 @@ def undersample_ds(x, classCol, nsamples_class, seed):
 
 # changes Classnames into integers representing each class
 def string_to_int(y):
-    unique_y = np.unique(y)
     new_y = y.copy()
+    unique_y = np.unique(new_y)
     new_y = new_y.to_numpy()
     for i in range(len(new_y)):
         for j in range(len(unique_y)):
@@ -54,7 +54,6 @@ def string_to_int(y):
                 new_y[i] = j
                 
     new_y = new_y.astype('int')
-    unique_y = unique_y.astype('int')
     return new_y, unique_y
    
      
@@ -70,7 +69,7 @@ sample_seed = 42 # seed for random sample
 #training_bc = undersample_ds(dfAll, 'Classname', nsamples_class, sample_seed)
 training_bc = dfAll.groupby('Classname').apply(lambda s: s.sample(nsamples_class,
                                                                   random_state = sample_seed))
-df.groupby('category')['item'].apply(lambda s: s.sample(10))
+
 # Run NRE function on the combination of  indices that preformed best
 green_red = nre_fun(training_bc['green'], training_bc['red'])
 blue_coastal = nre_fun(training_bc['blue'], training_bc['coastal'])
