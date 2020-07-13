@@ -22,6 +22,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.inspection import permutation_importance
+from sklearn.metrics import plot_confusion_matrix
 
 ##############################################################################
 # FUNCTIONS
@@ -127,8 +128,12 @@ rf.fit(X_train, y_train)
 t1 = time.time()
 total = t1-t0
 
+result = permutation_importance(rf, X_train, y_train, random_state = 8)
 predictions = rf.predict(X_test)
 accuracy = accuracy_score(y_test, predictions)
+confmat = confusion_matrix(y_test, predictions)
+df_confmat = pd.DataFrame(confmat)
+plot_confusion_matrix(rf, X_test, y_test)
 #confusionmatrix = pd.DataFrame(confusion_matrix(y_test, predicted),
 #                               columns=labels_name,
 #                               index=labels_name)
