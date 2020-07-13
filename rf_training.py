@@ -111,14 +111,12 @@ indices_df['Classname'] = pd.Series(training_bc['Classname'],
 features = indices_df
 
 # y data for rf. The y data needs to be as integers for sklearn. 
-labels, labels_name = string_to_int(indices_df['Classname'])
+#labels, labels_name = string_to_int(indices_df['Classname'])
+#labels = pd.get_dummies(indices_df['Classname'])
+labels = pd.factorize(indices_df['Classname'])[0]
 
 
-X_train, X_test, y_train, y_test = train_test_split(features[feature_names],
-                                                    labels,
-                                                    train_size = 0.9,
-                                                    random_state = 42,
-                                                    stratify = labels)
+X_train, X_test, y_train, y_test = train_test_split(features[feature_names], labels, train_size = 0.9, random_state = 42, stratify = labels)
 
 t0 = time.time()
 rf = RandomForestClassifier(n_estimators = 200,
