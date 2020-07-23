@@ -116,25 +116,30 @@ features = indices_df
 #labels = pd.get_dummies(indices_df['Classname'])
 labels = pd.factorize(indices_df['Classname'])[0]
 
-
-X_train, X_test, y_train, y_test = train_test_split(features[feature_names], labels, train_size = 0.9, random_state = 42, stratify = labels)
+# Partition data into testing and training data
+X_train, X_test, y_train, y_test = train_test_split(features[feature_names],
+                                                    labels, train_size = 0.9,
+                                                    random_state = 42,
+                                                    stratify = labels)
 
 t0 = time.time()
+# random classifier 
 rf = RandomForestClassifier(n_estimators = 200,
                             max_features = 5,
                             random_state = 8)
 
 rf.fit(X_train, y_train)
 t1 = time.time()
-total = t1-t0
+total_time = t1-t0
 
 result = permutation_importance(rf, X_train, y_train, random_state = 8)
+
 predictions = rf.predict(X_test)
+
 accuracy = accuracy_score(y_test, predictions)
+
 confmat = confusion_matrix(y_test, predictions)
 df_confmat = pd.DataFrame(confmat)
 plot_confusion_matrix(rf, X_test, y_test)
-#confusionmatrix = pd.DataFrame(confusion_matrix(y_test, predicted),
-#                               columns=labels_name,
-#                               index=labels_name)
+
 
